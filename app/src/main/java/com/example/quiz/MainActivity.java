@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private Button promptButton;
     private TextView questionTextView;
 
+    private boolean answerWasShown = false;
+
     private Question[] questions = new Question[] {
             new Question(R.string.q_activity,true),
             new Question(R.string.q_find_resources,false),
@@ -38,10 +40,14 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswerCorrectness(boolean userAnswer) {
         boolean correctAnswer = questions[currentIndex].isTrueAnswer();
         int resultMessageId = 0;
-        if (userAnswer == correctAnswer) {
-            resultMessageId = R.string.correct_answer;
+        if(answerWasShown) {
+            resultMessageId = R.string.answer_was_shown;
         } else {
-            resultMessageId = R.string.incorrect_answer;
+            if (userAnswer == correctAnswer) {
+                resultMessageId = R.string.correct_answer;
+            } else {
+                resultMessageId = R.string.incorrect_answer;
+            }
         }
         Toast.makeText(this, resultMessageId, Toast.LENGTH_SHORT).show();
     }
@@ -84,17 +90,28 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, PromptActivity.class);
             boolean correctAnswer = questions[currentIndex].isTrueAnswer();
             intent.putExtra(KEY_EXTRA_ANSWER, correctAnswer);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_CODE_PROMPT);
         });
 
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 currentIndex = (currentIndex + 1)%questions.length;
+                answerWasShown = false;
                 setNextQuestion();
             }
         });
         setNextQuestion();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) { return; }
+        if (requestCode == REQUEST_CODE_PROMPT) {
+            if (data == null) { return; }
+            answerWasShown = data.getBooleanExtra(PromptActivity.KEY_EXTRA_ANSWER_SHOWN, false);
+        }
     }
 
     @Override
